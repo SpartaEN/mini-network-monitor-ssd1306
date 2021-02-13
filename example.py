@@ -35,8 +35,8 @@ x = 0
 f = open('./secrets.json')
 config = json.load(f)
 
-edgeos = edgeOS.EdgeOS(config['edgeos']['url'], config['edgeos']
-                       ['username'], config['edgeos']['password'])
+edgeos = edgeOS.EdgeOS(config['edgeos']['url'], config['edgeos'], [
+                       'username'], config['edgeos']['password'], config['edgeos']['verifySSL'])
 
 outboundInterface = config['edgeos']['outboundInterface']
 outboundInterfaceParent = config['edgeos']['outboundInterfaceParent']
@@ -71,9 +71,18 @@ while True:
             cpu = routerData['data']['system-stats']['cpu']
             mem = routerData['data']['system-stats']['mem']
         if 'interfaces' in routerData['data']:
-            isUp = routerData['data']['interfaces'][outboundInterface]['up'] == 'true'
-            parentIsUP = routerData['data']['interfaces'][outboundInterfaceParent]['up'] == 'true'
-            APSpeed = routerData['data']['interfaces'][APInerface]['speed']
+            if outboundInterface in routerData['data']['interfaces']:
+                isUp = routerData['data']['interfaces'][outboundInterface]['up'] == 'true'
+            else:
+                isUp = False
+            if outboundInterfaceParent in routerData['data']['interfaces']:
+                parentIsUP = routerData['data']['interfaces'][outboundInterfaceParent]['up'] == 'true'
+            else:
+                parentIsUP = False
+            if APInerface in routerData['data']['interfaces']:
+                APSpeed = routerData['data']['interfaces'][APInerface]['speed']
+            else:
+                APSpeed = 'TBD'
             if isUp:
                 externalIP = routerData['data']['interfaces'][outboundInterface]['addresses'][0].split(
                     '/')[0]
@@ -94,7 +103,7 @@ while True:
     # Clear Darwing
     draw.rectangle((0, 0, width, height), outline=0, fill=0)
 
-    if APSpeed != '1000':
+    if APSpeed != '1000' and APSpeed != 'TBD':
         banner = 'AP Speed Outage'
         err += 1
     if apData['status'] == False:
