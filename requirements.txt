@@ -1,0 +1,4 @@
+requests
+websocket-client
+icmplib
+adafruit_ssd1306

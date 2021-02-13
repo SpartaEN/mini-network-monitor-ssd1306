@@ -1,0 +1,8 @@
+.vscode
+logs/*.log
+
+node_modules
+
+__pycache__
+
+secrets.json
