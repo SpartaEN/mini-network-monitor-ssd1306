@@ -4,6 +4,7 @@ import threading
 import time
 import websocket as ws
 import json
+import ssl
 
 
 class EdgeOS:
@@ -148,7 +149,12 @@ class EdgeOS:
         self.ws = ws.WebSocketApp(url, on_open=self.on_ws_open, on_close=self.on_ws_close,
                                   on_message=self.on_ws_message, on_error=self.on_ws_error,
                                   on_ping=self.on_ws_ping)
-        self.ws.run_forever(ping_interval=30)
+        if self.session.verify == True:
+            self.ws.run_forever(ping_interval=30)
+        else:
+            self.ws.run_forever(ping_interval=30, sslopt={
+                                'cert_reqs': ssl.CERT_NONE,
+                                'check_hostname': False})
 
     def openWebsocket(self):
         threading.Thread(target=self._openWebsocket, daemon=True).start()
