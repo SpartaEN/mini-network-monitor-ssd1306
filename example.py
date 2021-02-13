@@ -35,8 +35,8 @@ x = 0
 f = open('./secrets.json')
 config = json.load(f)
 
-edgeos = edgeOS.EdgeOS(config['edgeos']['url'], config['edgeos'], [
-                       'username'], config['edgeos']['password'], config['edgeos']['verifySSL'])
+edgeos = edgeOS.EdgeOS(config['edgeos']['url'], config['edgeos']['username'],
+                       config['edgeos']['password'], config['edgeos']['verifySSL'])
 
 outboundInterface = config['edgeos']['outboundInterface']
 outboundInterfaceParent = config['edgeos']['outboundInterfaceParent']
