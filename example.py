@@ -6,6 +6,9 @@ import logging
 import time
 import json
 
+import signal
+import sys
+
 from board import SCL, SDA
 import busio
 from PIL import Image, ImageDraw, ImageFont
@@ -65,6 +68,19 @@ parentIsUP = False
 download = 'TBD'
 upload = 'TBD'
 APSpeed = 'TBD'
+
+
+# Handle SIGINT, stop the display gracefully
+def signal_handler(sig, frame):
+    global draw, disp
+    logging.info('Exiting...')
+    draw.rectangle((0, 0, width, height), outline=0, fill=0)
+    disp.image(image)
+    disp.show()
+    sys.exit(0)
+
+
+signal.signal(signal.SIGINT, signal_handler)
 
 while True:
     routerData = edgeos.getData()
