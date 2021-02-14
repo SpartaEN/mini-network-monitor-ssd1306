@@ -26,6 +26,8 @@ class EdgeOS:
                 }
             }
         }
+        self.bufferLength = 0
+        self.buffer = ''
         self.ws = None
         self.establish()
         self.start()
@@ -53,14 +55,14 @@ class EdgeOS:
                     self.url, '/api/edge/heartbeat.json'), params={'_': int(time.time() * 1000)})
                 logger.debug('Keepalive ping')
                 if res.status_code == 403:
-                    logger.warn('Restoring session')
+                    logger.warning('Restoring session')
                     # Session failure
                     self.status = False
                     self.errorMsg = 'Connecting to router'
                     self.establish()
                 data = res.json()
                 if data['SESSION'] == False:
-                    logger.warn('Restoring session')
+                    logger.warning('Restoring session')
                     self.status = False
                     self.errorMsg = 'Connecting to router'
                     self.establish()
@@ -76,10 +78,6 @@ class EdgeOS:
 
     def on_ws_open(self):
         logger.info('WS connection opened')
-        self.wsData = {
-            'length': 0,
-            'buffer': ''
-        }
         payload = json.dumps({
             'SESSION_ID': self.session.cookies.get_dict()['PHPSESSID'],
             'SUBSCRIBE': [
@@ -98,13 +96,16 @@ class EdgeOS:
         self.ws.send('{}\n{}'.format(len(payload), payload))
 
     def on_ws_message(self, message):
-        length = int(message.split('\n')[0])
-        payload = '\n'.join(message.split('\n')[1:])
-        self.wsData['length'] = length
-        self.wsData['buffer'] = self.wsData['buffer'] + payload
-        # If match, craft directly
-        # Else just drop the packet, IDK how to handle gracefully
-        if len(payload) == length:
+        payload = ''
+        # Assume the data is continuous just handle the ValueError
+        try:
+            self.bufferLength = int(message.split('\n')[0])
+            payload = '\n'.join(message.split('\n')[1:])
+        except ValueError:
+            self.buffer = self.buffer + message
+            payload = self.buffer
+        if len(payload) == self.bufferLength:
+            self.buffer = ''
             data = json.loads(payload)
             if 'interfaces' in data:
                 if self.data['speed']['last_update'] != 0:
@@ -132,9 +133,9 @@ class EdgeOS:
         logger.error(error)
 
     def on_ws_close(self):
-        logger.warn('WS error')
+        logger.warning('WS error')
 
-    def on_ws_ping(self):
+    def on_ws_ping(self, data):
         logger.debug('WS Keepalive ping')
         payload = json.dumps({
             'CLIENT_PING': '',
