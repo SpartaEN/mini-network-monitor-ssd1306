@@ -27,7 +27,7 @@ class icmp:
             else:
                 self.data['status'] = False
                 self.data['msg'] = 'Device seems down'
-                logger.warn('Cannot ping through {}'.format(self.addr))
+                logger.warning('Cannot ping through {}'.format(self.addr))
             time.sleep(self.interval)
 
     def getData(self):

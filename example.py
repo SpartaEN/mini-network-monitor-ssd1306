@@ -128,27 +128,27 @@ while True:
 
     if APSpeed != '1000' and APSpeed != 'TBD':
         banner = 'AP Speed Outage'
-        logging.warn(banner)
+        logging.warning(banner)
         err += 1
     if apData['status'] == False:
         banner = 'AP Down'
-        logging.warn(banner)
+        logging.warning(banner)
         err += 1
     if outboundData['status'] == False:
         banner = 'Outbound outage'
-        logging.warn(banner)
+        logging.warning(banner)
         err += 1
     if isUp == False:
         banner = 'PPPoE Down'
-        logging.warn(banner)
+        logging.warning(banner)
         err += 1
         if parentIsUP == False:
             banner = 'ISP Disconnected'
-            logging.warn(banner)
+            logging.warning(banner)
             err += 1
     if routerData['status'] == False:
         banner = routerData['msg']
-        logging.warn(banner)
+        logging.warning(banner)
         err += 1
 
     if err == 0:
