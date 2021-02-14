@@ -1,6 +1,8 @@
 from icmplib import ping
 import time
 import threading
+import logging
+logger = logging.getLogger(__name__)
 
 
 class icmp:
@@ -16,7 +18,7 @@ class icmp:
             target=self.pingThread, daemon=True).start()
 
     def pingThread(self):
-        print('[ICMP] Thread started')
+        logger.info('Thread started')
         while True:
             host = ping(self.addr, count=1, interval=1, timeout=2)
             if host.is_alive:
@@ -25,6 +27,7 @@ class icmp:
             else:
                 self.data['status'] = False
                 self.data['msg'] = 'Device seems down'
+                logger.warn('Cannot ping through {}'.format(self.addr))
             time.sleep(self.interval)
 
     def getData(self):

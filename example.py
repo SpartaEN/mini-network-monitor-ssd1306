@@ -2,6 +2,7 @@
 from devices import edgeOS
 from devices import icmp
 from utils import prettyPrint
+import logging
 import time
 import json
 
@@ -37,6 +38,10 @@ config = json.load(f)
 
 edgeos = edgeOS.EdgeOS(config['edgeos']['url'], config['edgeos']['username'],
                        config['edgeos']['password'], config['edgeos']['verifySSL'])
+
+# Logging
+logging.basicConfig(filename='./logs/main.log',
+                    format='[%(asctime)s][%(levelname)s][%(module)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
 
 outboundInterface = config['edgeos']['outboundInterface']
 outboundInterfaceParent = config['edgeos']['outboundInterfaceParent']
@@ -105,21 +110,27 @@ while True:
 
     if APSpeed != '1000' and APSpeed != 'TBD':
         banner = 'AP Speed Outage'
+        logging.warn(banner)
         err += 1
     if apData['status'] == False:
         banner = 'AP Down'
+        logging.warn(banner)
         err += 1
     if outboundData['status'] == False:
         banner = 'Outbound outage'
+        logging.warn(banner)
         err += 1
     if isUp == False:
         banner = 'PPPoE Down'
+        logging.warn(banner)
         err += 1
         if parentIsUP == False:
             banner = 'ISP Disconnected'
+            logging.warn(banner)
             err += 1
     if routerData['status'] == False:
         banner = routerData['msg']
+        logging.warn(banner)
         err += 1
 
     if err == 0:

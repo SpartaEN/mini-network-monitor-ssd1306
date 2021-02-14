@@ -5,11 +5,13 @@ import time
 import websocket as ws
 import json
 import ssl
+import logging
+logger = logging.getLogger(__name__)
 
 
 class EdgeOS:
     def __init__(self, url, username, password, verifySSL=True):
-        print('[EdgeOS] Initializing')
+        logger.info('Initializing')
         self.url = url
         self.username = username
         self.password = password
@@ -36,28 +38,29 @@ class EdgeOS:
             }, allow_redirects=False)
             if res.status_code == 200:
                 self.errorMsg = 'Invalid credential'
-                print('[EdgeOS] Authentication failed')
+                logger.error('Authentication failed')
             self.status = True
-            print('[EdgeOS] API connected')
+            logger.info('API connected')
             self.openWebsocket()
         except:
             self.errorMsg = 'Router seems down'
-            print('[EdgeOS] Unable to connect')
+            logger.error('Unable to connect')
 
     def keepAlive(self):
         while True:
             try:
                 res = self.session.get(urlparse.urljoin(
                     self.url, '/api/edge/heartbeat.json'), params={'_': int(time.time() * 1000)})
+                logger.debug('Keepalive ping')
                 if res.status_code == 403:
-                    print('[EdgeOS] Restoring session')
+                    logger.warn('Restoring session')
                     # Session failure
                     self.status = False
                     self.errorMsg = 'Connecting to router'
                     self.establish()
                 data = res.json()
                 if data['SESSION'] == False:
-                    print('[EdgeOS] Restoring session')
+                    logger.warn('Restoring session')
                     self.status = False
                     self.errorMsg = 'Connecting to router'
                     self.establish()
@@ -72,7 +75,7 @@ class EdgeOS:
         self.keepAliveThread.start()
 
     def on_ws_open(self):
-        print('[EdgeOS] WS connection opened')
+        logger.info('WS connection opened')
         self.wsData = {
             'length': 0,
             'buffer': ''
@@ -125,13 +128,14 @@ class EdgeOS:
             self.data.update(data)
 
     def on_ws_error(self, error):
-        print('[EdgeOS] WS error')
-        print(error)
+        logger.error('WS error')
+        logger.error(error)
 
     def on_ws_close(self):
-        print('[EdgeOS] WS closed')
+        logger.warn('WS error')
 
     def on_ws_ping(self):
+        logger.debug('WS Keepalive ping')
         payload = json.dumps({
             'CLIENT_PING': '',
             'SESSION_ID': self.session.cookies.get_dict()['PHPSESSID']
