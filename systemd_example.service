@@ -1,0 +1,15 @@
+[Unit]
+Description=Network Monitor I2C
+After=network.target
+
+[Service]
+Type=simple
+# Use root since icmplib requires root permission
+User=root
+Group=root
+WorkingDirectory=/opt/nm-i2c
+ExecStart=/usr/bin/env python3 /opt/nm-i2c/main.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
