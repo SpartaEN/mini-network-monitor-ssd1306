@@ -44,7 +44,7 @@ edgeos = edgeOS.EdgeOS(config['edgeos']['url'], config['edgeos']['username'],
 
 # Logging
 logging.basicConfig(filename='./logs/main.log',
-                    format='[%(asctime)s][%(levelname)s][%(module)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+                    format='[%(asctime)s][%(levelname)s][%(module)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S', level=logging.INFO)
 
 outboundInterface = config['edgeos']['outboundInterface']
 outboundInterfaceParent = config['edgeos']['outboundInterfaceParent']
