@@ -29,21 +29,22 @@ class EdgeOS:
         self.bufferLength = 0
         self.buffer = ''
         self.ws = None
-        self.establish()
+        self.wsStatus = False
+        self.auth()
+        self.openWebsocket()
         self.start()
 
-    def establish(self):
+    def auth(self):
         try:
             res = self.session.post(self.url, data={
                 'username': self.username,
                 'password': self.password
-            }, allow_redirects=False)
+            }, allow_redirects=False, timeout=5)
             if res.status_code == 200:
                 self.errorMsg = 'Invalid credential'
                 logger.error('Authentication failed')
             self.status = True
             logger.info('API connected')
-            self.openWebsocket()
         except:
             self.errorMsg = 'Router seems down'
             logger.error('Unable to connect')
@@ -52,20 +53,27 @@ class EdgeOS:
         while True:
             try:
                 res = self.session.get(urlparse.urljoin(
-                    self.url, '/api/edge/heartbeat.json'), params={'_': int(time.time() * 1000)})
+                    self.url, '/api/edge/heartbeat.json'), params={'_': int(time.time() * 1000)}, timeout=5)
                 logger.debug('Keepalive ping')
                 if res.status_code == 403:
                     logger.warning('Restoring session')
                     # Session failure
                     self.status = False
                     self.errorMsg = 'Connecting to router'
-                    self.establish()
+                    self.auth()
+                    continue
                 data = res.json()
                 if data['SESSION'] == False:
                     logger.warning('Restoring session')
                     self.status = False
                     self.errorMsg = 'Connecting to router'
-                    self.establish()
+                    self.auth()
+                    continue
+                if self.wsStatus == False:
+                    self.openWebsocket()
+                    self.errorMsg = 'WS Down'
+                    continue
+                self.status = True
             except:
                 self.status = False
                 self.errorMsg = 'Router seems down'
@@ -133,7 +141,7 @@ class EdgeOS:
         logger.error(error)
 
     def on_ws_close(self):
-        logger.warning('WS error')
+        logger.warning('WS Closed')
 
     def on_ws_ping(self, data):
         logger.debug('WS Keepalive ping')
@@ -144,8 +152,6 @@ class EdgeOS:
         self.ws.send('{}\n{}'.format(len(payload), payload))
 
     def _openWebsocket(self):
-        if self.ws:
-            self.ws.close()
         # Setup WS connection
         url = list(urlparse.urlsplit(self.url))
         url[0] = 'wss'
@@ -154,14 +160,23 @@ class EdgeOS:
         self.ws = ws.WebSocketApp(url, on_open=self.on_ws_open, on_close=self.on_ws_close,
                                   on_message=self.on_ws_message, on_error=self.on_ws_error,
                                   on_ping=self.on_ws_ping)
-        if self.session.verify == True:
-            self.ws.run_forever(ping_interval=30)
-        else:
-            self.ws.run_forever(ping_interval=30, sslopt={
-                                'cert_reqs': ssl.CERT_NONE,
-                                'check_hostname': False})
+        try:
+            if self.session.verify == True:
+                self.ws.run_forever(ping_interval=30)
+            else:
+                self.ws.run_forever(ping_interval=30, sslopt={
+                                    'cert_reqs': ssl.CERT_NONE,
+                                    'check_hostname': False})
+            self.ws.close()
+            self.wsStatus = False
+        except:
+            logger.warning('WS died, awaiting for restart')
+            self.ws.close()
+            self.wsStatus = False
+        exit()
 
     def openWebsocket(self):
+        self.wsStatus = True
         threading.Thread(target=self._openWebsocket, daemon=True).start()
 
     def getData(self):
